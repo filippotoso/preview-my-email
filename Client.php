@@ -17,7 +17,7 @@ class Client
      * @param String ;     PreviewMyEmail api key
      */
     public function __construct($apikey) {
-        $this->$apikey = $apikey;
+        $this->apikey = $apikey;
     }
 
     /**
@@ -30,7 +30,7 @@ class Client
 
         $params['apikey'] = $this->apikey;
 
-        $url = self::API_URL . $path . '?' . http_build_query($params);
+        $url = self::API_URL . $path;
 
         return $url;
 
@@ -42,7 +42,7 @@ class Client
      * @param  String $url The url of the API endpoint
      * @return Array|FALSE  The result of the request
      */
-    protected function get($url) {
+    protected function get($url, $json = TRUE) {
 
         $client = new HTTPClient();
 
@@ -53,9 +53,11 @@ class Client
             return FALSE;
         }
 
-        $data = json_decode($res->getBody(), TRUE);
+        if ($json) {
+            return json_decode($res->getBody(), TRUE);
+        }
 
-        return $data;
+        return $res->getBody(TRUE);
 
     }
 
@@ -63,24 +65,28 @@ class Client
      * Execute an HTTP POST request to BrowserStack API
      * @param  String $url The url of the API endpoint
      * @param  Array $data The parameters of the request
+     * @param  Bool $json Specify if the answer is json and needs to be decoded
      * @return Array|FALSE  The result of the request
      */
-    protected function post($url, $data) {
+    protected function post($url, $data, $json = TRUE) {
 
         $client = new HTTPClient();
 
         try {
             $res = $client->request('POST', $url, [
-                'json' => $data,
+                'form_params' => $data,
+                'read_timeout' => 90, // Check createPreview() notes
             ]);
         }
         catch (BadResponseException $e) {
             return FALSE;
         }
 
-        $data = json_decode($res->getBody(), TRUE);
+        if ($json) {
+            return json_decode($res->getBody(), TRUE);
+        }
 
-        return $data;
+        return (string)$res->getBody();
 
     }
 
@@ -98,7 +104,9 @@ class Client
     }
 
     /**
-     * Creates a new email design test request
+     * Creates a new email design test request. Please note: creating design
+     * test for all email applications on PreviewMyEmail, may delay API response to
+     * 1 minute, so keep your timings right.
      * @param  String $emailBody    Provide the HTML part of your email
      * @param  String $emailSubject Provide the subject of your email
      * @param  Array $targetEmailApps   Provide the list of email clients you wish to get screen shots from. This parameter should be passed in array format.
@@ -115,7 +123,7 @@ class Client
 
         $url = $this->buildUrl('CreatePreview', $params);
 
-        return $this->post($url);
+        return $this->post($url, $params);
 
     }
 
@@ -137,6 +145,7 @@ class Client
 
     /**
      * Returns the list of email design test requests you have done so far.
+     * Please note: we are wiping design tests every six months).
      * @return Array  The result of the request
      * Source: https://previewmyemail.com/resources/articles/getpreviewlist
      */
@@ -144,7 +153,9 @@ class Client
 
         $url = $this->buildUrl('GetPreviewList', $params);
 
-        return $this->post($url, $params);
+        $result = $this->post($url, $params);
+
+        return is_null($result) ? [] : $result;
 
     }
 
@@ -195,12 +206,12 @@ class Client
 
         $url = $this->buildUrl('RetryEmailClient', $params);
 
-        return $this->post($url, $url);
+        return $this->post($url, $params);
 
     }
 
     /**
-     * Creates a new email design test request. Please note*: creating design
+     * Creates a new email design test request. Please note: creating design
      * test for all email applications on PreviewMyEmail, may delay API response to
      * 1 minute, so keep your timings right.
      * @param  String $tag    Provide the name of the tracking code tag to create the tracking code.
@@ -213,7 +224,7 @@ class Client
 
         $url = $this->buildUrl('CreateEmailAnalyticsCode', $params);
 
-        return $this->post($url, $params);
+        return $this->post($url, $params, FALSE);
 
     }
 
@@ -221,7 +232,7 @@ class Client
      * This API command returns total numbers such as opens, unique opens,
      * forwards, prints, etc.
      * @param  String $tag   Provide the name of the tracking code tag to get results for. Cannot be
-     *                       empty. Please note*: stating non-existent analytics tag will return a
+     *                       empty. Please note: stating non-existent analytics tag will return a
      *                       successful response with “0” counts.
      * @return Array  The result of the request
      * Source: https://previewmyemail.com/resources/articles/getemailanalyticscounts
@@ -240,7 +251,7 @@ class Client
      * This API command returns “most hit” email applications/clients detected
      * in your tag.
      * @param  String $tag   Provide the name of the tracking code tag to get results for. Cannot be
-     *                       empty. Please note*: stating non-existent analytics tag will return a
+     *                       empty. Please note: stating non-existent analytics tag will return a
      *                       successful response with “0” counts.
      * @return Array  The result of the request
      * Source: https://previewmyemail.com/resources/articles/getemailanalyticstopclients
@@ -258,7 +269,7 @@ class Client
     /**
      * This API command returns top geo-locations detected in your tag.
      * @param  String $tag   Provide the name of the tracking code tag to get results for. Cannot be
-     *                       empty. Please note*: stating non-existent analytics tag will return a
+     *                       empty. Please note: stating non-existent analytics tag will return a
      *                       successful response with “0” counts.
      * @return Array  The result of the request
      * Source: https://previewmyemail.com/resources/articles/getemailanalyticstoplocations
@@ -280,14 +291,14 @@ class Client
      * you will have to use time parser and retrieve 150 entries with every
      * parsed-time request.
      * @param  String $tag   Provide the name of the tracking code tag to get results for. Cannot be
-     *                       empty. Please note*: stating non-existent analytics tag will return a
+     *                       empty. Please note: stating non-existent analytics tag will return a
      *                       successful response with “0” counts.
      * @param Enum $get      Optional parameter. Retrieve feed data “after” or “before” the
      *                       timestamp. Please note: this parameter won’t work without
      *                       timestamp declaration.
      * @param Int $timestamp Optional parameter. Pass this info if you wish to retrieve the
      *                       feed after/before a certain date/time. It should be in unix
-     *                       timestamp format. Please note***: server is running in
+     *                       timestamp format. Please note: server is running in
      *                       “Europe/Istanbul” time zone, you have to calculate UTC time
      *                       accordingly.
      * @param Int $limit     Optional parameter. If you wish to retrieve limited records below 150,
@@ -312,6 +323,61 @@ class Client
         }
 
         $url = $this->buildUrl('GetEmailAnalyticsFeed', $params);
+
+        return $this->post($url, $params);
+
+    }
+
+    /**
+     * This public API command will get your email content and take a small thumbnail
+     * screen shot of it. Useful for displaying a small thumbnail next your email campaigns.
+     * This API command will return a request ID. You can query this request ID with
+     * “GetThumbnail” API command in a few minutes to retrieve the URL of your email
+     * screen shot thumbnail.
+
+     * @param  String $contentType   Email content type. It can be ‘HTML’ or ‘Text’
+     * @param  String $content   Email content
+     * @return Array  The result of the request
+     * Source: http://previewmyemail.com/resources/articles/newthumbnail
+     */
+    public function newThumbnail($contentType, $content) {
+
+        $params = [
+            'ContentType' => $contentType,
+            'Content' => $content
+        ];
+
+        $url = $this->buildUrl('NewThumbnail', $params);
+
+        return $this->post($url, $params);
+
+    }
+
+    /**
+     * This public API command will return the URL of the generated thumbnail.
+     * If it’s not ready yet, it will return an error.
+     * @param  String $requestId  The request ID gathered from NewThumbnail API call
+     * @return Array  The result of the request
+     * Source: http://previewmyemail.com/resources/articles/getthumbnail
+     */
+    public function getThumbnail($requestId) {
+
+        $params = ['RequestID' => $requestId];
+
+        $url = $this->buildUrl('GetThumbnail', $params);
+
+        return $this->post($url, $params);
+
+    }
+
+    /**
+     * Returns the list of inbox monitor tests you have made so far.
+     * @return Array  The result of the request
+     * Source: https://previewmyemail.com/resources/articles/retrieveemailclients
+     */
+    public function getInboxMonitoringResults() {
+
+        $url = $this->buildUrl('GetInboxMonitoringResults', $params);
 
         return $this->post($url, $params);
 
