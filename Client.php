@@ -117,7 +117,7 @@ class Client
 
         $params = [
             'emailbody' => base64_encode($emailBody),
-            'emailsubject' => $emailSubject,
+            'emailsubject' => base64_encode($emailSubject),
             'targetemailapps' => $targetEmailApps,
         ];
 
@@ -135,7 +135,7 @@ class Client
      */
     public function fetchPreview($jobId) {
 
-        $params = ['job' => $jobId];
+        $params = ['jobid' => $jobId];
 
         $url = $this->buildUrl('FetchPreview', $params);
 
@@ -180,7 +180,7 @@ class Client
      */
     public function deletePreview($jobId) {
 
-        $params = ['job' => $jobId];
+        $params = ['jobid' => $jobId];
 
         $url = $this->buildUrl('DeletePreview', $params);
 
@@ -200,7 +200,7 @@ class Client
     public function retryEmailClient($jobId, $clientCode) {
 
         $params = [
-            'job' => $jobId,
+            'jobid' => $jobId,
             'clientcode' => $clientCode,
         ];
 
