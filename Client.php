@@ -139,7 +139,9 @@ class Client
 
         $url = $this->buildUrl('FetchPreview', $params);
 
-        return $this->post($url, $params);
+        $data = $this->post($url, $params);
+
+        return isset($data[0]) ? $data[0] : $data;
 
     }
 
