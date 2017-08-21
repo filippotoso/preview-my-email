@@ -6,7 +6,7 @@ git status
 SET /P MESSAGE=Please enter the commit message: 
 IF "%MESSAGE%"=="" GOTO Error
 git tag
-SET /P VERSION=Please enter the version number: 
+SET /P VERSION=Please enter the version number (i.e. 1.2.3): 
 IF "%VERSION%"=="" GOTO Error
 git commit -m "%MESSAGE%"
 git tag -a v%VERSION% -m "%MESSAGE%"

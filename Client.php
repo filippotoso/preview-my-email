@@ -128,7 +128,7 @@ class Client
     }
 
     /**
-     * Creates a new email design test request
+     * Get a preview job
      * @param  String $jobId    The jobid returned by createPreview()
      * @return Array  The result of the request
      * Source: https://previewmyemail.com/resources/articles/fetchpreview
@@ -147,7 +147,7 @@ class Client
 
     /**
      * Returns the list of email design test requests you have done so far.
-     * Please note: we are wiping design tests every six months).
+     * Please note: we are wiping design tests every six months.
      * @return Array  The result of the request
      * Source: https://previewmyemail.com/resources/articles/getpreviewlist
      */
@@ -175,7 +175,7 @@ class Client
     }
 
     /**
-     * Deletes the target email design test
+     * Deletes the target email design test (currently disabled)
      * @param  String $jobId    The jobid returned by createPreview()
      * @return Boolean
      * Source: https://previewmyemail.com/resources/articles/deletepreview
@@ -336,7 +336,6 @@ class Client
      * This API command will return a request ID. You can query this request ID with
      * “GetThumbnail” API command in a few minutes to retrieve the URL of your email
      * screen shot thumbnail.
-
      * @param  String $contentType   Email content type. It can be ‘HTML’ or ‘Text’
      * @param  String $content   Email content
      * @return Array  The result of the request
